@@ -194,9 +194,7 @@ import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.util.Assert;
 
 /**
- * Implementation of the {@link AuthenticationFailureHandler}. Theoretically the failure handler won't be used frequently, since the filter uses the cas authentication cookie to try to initiate the
- * gateway authentication.
- * But if by some reason the server loses the user ticket and the authentication fails, this implementation will send the user to the redirect url (only when it can detect it was a
+ * Implementation of the {@link AuthenticationFailureHandler}. When the authentication fails and the component detects with was a gateway request, it returns the user to same page he was.
  * #{@link GatewayAwareUrlAuthenticationHandler#isGatewayRequest(HttpServletRequest)}.
  * The AuthenticateSuccessHandler delegates to the {@link AuthenticationSuccessHandler} setted, by default the {@link SavedRequestAwareAuthenticationSuccessHandler}. It also removes the
  * GATEWAY_ATTEMPT attribute from session.
