@@ -3,7 +3,7 @@
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>br.com.softplan.unj</groupId>
-	<artifactId>cas-unprotected-page-authentication-handler</artifactId>
+	<artifactId>cas-gateway-authentication-handler</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 
 	<properties>
