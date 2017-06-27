@@ -21,11 +21,11 @@ import org.springframework.security.web.savedrequest.RequestCache;
 
 import br.com.softplan.cas.client.authentication.GatewayAwareUrlAuthenticationHandler;
 
-public class CasUnprotectedPageAuthenticationFilterTest {
+public class CasGatewayAuthenticationFilterTest {
 
 	private Authentication authentication;
 
-	private CasUnprotectedPageAuthenticationFilter casUnprotectedPageAuthenticationFilter;
+	private CasGatewayAuthenticationFilter casUnprotectedPageAuthenticationFilter;
 
 	private CasAuthenticationEntryPoint casAuthenticationEntryPoint;
 
@@ -54,7 +54,7 @@ public class CasUnprotectedPageAuthenticationFilterTest {
 		// Mocked authenticationEntryPoint
 		this.casAuthenticationEntryPoint = Mockito.mock(CasAuthenticationEntryPoint.class);
 		this.requestCacheMock = Mockito.mock(RequestCache.class);
-		this.casUnprotectedPageAuthenticationFilter = new CasUnprotectedPageAuthenticationFilter(this.casAuthenticationEntryPoint, "TGC", this.requestCacheMock);
+		this.casUnprotectedPageAuthenticationFilter = new CasGatewayAuthenticationFilter(this.casAuthenticationEntryPoint, this.requestCacheMock);
 		this.casUnprotectedPageAuthenticationFilter.afterPropertiesSet();
 		// Mocked request and response
 		this.sessionMock = Mockito.mock(HttpSession.class);

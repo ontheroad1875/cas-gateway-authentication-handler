@@ -172,8 +172,6 @@
 package br.com.softplan.cas.client.filter;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Optional;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -181,14 +179,12 @@ import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.cas.web.CasAuthenticationEntryPoint;
 import org.springframework.security.cas.web.CasDelegatingAuthenticationEntryPoint;
 import org.springframework.security.core.Authentication;
@@ -198,14 +194,16 @@ import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.util.Assert;
 
+import br.com.softplan.cas.client.authentication.AuthenticationVerifierStrategy;
 import br.com.softplan.cas.client.authentication.GatewayAwareUrlAuthenticationHandler;
+import br.com.softplan.cas.client.authentication.VisibleAuthenticationCookieStrategy;
 
 /**
  * Filter responsible to start the authentication process on unprotected pages. Should be use after the {@link FilterSecurityInterceptor}.
  */
-public class CasUnprotectedPageAuthenticationFilter implements Filter, InitializingBean {
+public class CasGatewayAuthenticationFilter implements Filter, InitializingBean {
 
-	private static final String DEFAULT_CAS_AUTHENTICATION_COOKIE = "TGC";
+	public static final String DEFAULT_CAS_AUTHENTICATION_COOKIE = "TGC";
 
 	private Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -213,37 +211,27 @@ public class CasUnprotectedPageAuthenticationFilter implements Filter, Initializ
 
 	private CasAuthenticationEntryPoint casAuthenticationEntryPoint;
 
+	private AuthenticationVerifierStrategy authenticationVerifierStrategy = new VisibleAuthenticationCookieStrategy();
+
 	/**
 	 * Implementation that always add &gateway=true to the serviceUrl.
 	 */
 	private CasGatewayAuthenticationEntryPoint casGatewayAuthenticationEntryPoint;
 
-	private final String casCookieName;
-
 	/**
 	 * @param casAuthenticationEntryPoint
-	 *            - The implementation of the {@link CasAuthenticationEntryPoint} used by the user. The {@link CasUnprotectedPageAuthenticationFilter} will delegate to this implementation to do others
+	 *            - The implementation of the {@link CasAuthenticationEntryPoint} used by the user. The {@link CasGatewayAuthenticationFilter} will delegate to this implementation to do
+	 *            others
 	 *            tasks {@link CasDelegatingAuthenticationEntryPoint#createRedirectUrl} and ${@link CasDelegatingAuthenticationEntryPoint#createServiceUrl}.
 	 */
-	public CasUnprotectedPageAuthenticationFilter(CasAuthenticationEntryPoint casAuthenticationEntryPoint) {
-		this(casAuthenticationEntryPoint, DEFAULT_CAS_AUTHENTICATION_COOKIE);
-	}
-
-	/**
-	 * @param casAuthenticationEntryPoint
-	 *            - The implementation of the {@link CasAuthenticationEntryPoint} used by the user. The {@link CasUnprotectedPageAuthenticationFilter} will delegate to this implementation to do others
-	 *            tasks {@link CasDelegatingAuthenticationEntryPoint#createRedirectUrl} and ${@link CasDelegatingAuthenticationEntryPoint#createServiceUrl}.
-	 * @param casCookieName
-	 *            - The authentication cookie used by cas. To use this implementation you have to set tgc.path to "/", so the cookie can be seen by other applications in the same domain.
-	 */
-	public CasUnprotectedPageAuthenticationFilter(CasAuthenticationEntryPoint casAuthenticationEntryPoint, String casCookieName) {
+	public CasGatewayAuthenticationFilter(CasAuthenticationEntryPoint casAuthenticationEntryPoint) {
 		this.casAuthenticationEntryPoint = casAuthenticationEntryPoint;
-		this.casCookieName = casCookieName;
 	}
 
 	/**
 	 * @param casAuthenticationEntryPoint
-	 *            - The implementation of the {@link CasAuthenticationEntryPoint} used by the user. The {@link CasUnprotectedPageAuthenticationFilter} will delegate to this implementation to do others
+	 *            - The implementation of the {@link CasAuthenticationEntryPoint} used by the user. The {@link CasGatewayAuthenticationFilter} will delegate to this implementation to do
+	 *            others
 	 *            tasks {@link CasDelegatingAuthenticationEntryPoint#createRedirectUrl} and ${@link CasDelegatingAuthenticationEntryPoint#createServiceUrl}.
 	 * @param casCookieName
 	 *            - The authentication cookie used by cas. To use this implementation you have to set tgc.path to "/", so the cookie can be seen by other applications in the same domain.
@@ -251,17 +239,43 @@ public class CasUnprotectedPageAuthenticationFilter implements Filter, Initializ
 	 * @param requestCache
 	 *            - RequestCache implementation. By default it uses {@link HttpSessionRequestCache}.
 	 */
-	public CasUnprotectedPageAuthenticationFilter(CasAuthenticationEntryPoint casAuthenticationEntryPoint, String casCookieName, RequestCache requestCache) {
-		this.casAuthenticationEntryPoint = casAuthenticationEntryPoint;
-		this.casCookieName = casCookieName;
+	public CasGatewayAuthenticationFilter(CasAuthenticationEntryPoint casAuthenticationEntryPoint, RequestCache requestCache) {
+		this(casAuthenticationEntryPoint);
 		this.requestCache = requestCache;
+	}
+
+	/**
+	 * @param casAuthenticationEntryPoint
+	 *            - The implementation of the {@link CasAuthenticationEntryPoint} used by the user. The {@link CasGatewayAuthenticationFilter} will delegate to this implementation to do
+	 *            others
+	 *            tasks {@link CasDelegatingAuthenticationEntryPoint#createRedirectUrl} and ${@link CasDelegatingAuthenticationEntryPoint#createServiceUrl}.
+	 * @param authenticationVerifierStrategy
+	 *            - The way the filter verifies if the user is logged and if should try to authenticate
+	 */
+	public CasGatewayAuthenticationFilter(CasAuthenticationEntryPoint casAuthenticationEntryPoint, AuthenticationVerifierStrategy authenticationVerifierStrategy) {
+		this(casAuthenticationEntryPoint);
+		this.authenticationVerifierStrategy = authenticationVerifierStrategy;
+	}
+
+	/**
+	 * @param casAuthenticationEntryPoint
+	 *            - The implementation of the {@link CasAuthenticationEntryPoint} used by the user. The {@link CasGatewayAuthenticationFilter} will delegate to this implementation to do
+	 *            others
+	 *            tasks {@link CasDelegatingAuthenticationEntryPoint#createRedirectUrl} and ${@link CasDelegatingAuthenticationEntryPoint#createServiceUrl}.
+	 * @param requestCache
+	 *            - RequestCache implementation. By default it uses {@link HttpSessionRequestCache}.
+	 * @param authenticationVerifierStrategy
+	 *            - The way the filter verifies
+	 */
+	public CasGatewayAuthenticationFilter(CasAuthenticationEntryPoint casAuthenticationEntryPoint, RequestCache requestCache, AuthenticationVerifierStrategy authenticationVerifierStrategy) {
+		this(casAuthenticationEntryPoint, requestCache);
+		this.authenticationVerifierStrategy = authenticationVerifierStrategy;
 	}
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		Assert.notNull(this.casAuthenticationEntryPoint, "CasAuthenticationEntryPoint implementation is required");
 		this.casGatewayAuthenticationEntryPoint = new CasGatewayAuthenticationEntryPoint(this.casAuthenticationEntryPoint);
-		Assert.hasText(this.casCookieName);
 		Assert.notNull(this.requestCache, "Request cache implementation is required");
 	}
 
@@ -275,14 +289,14 @@ public class CasUnprotectedPageAuthenticationFilter implements Filter, Initializ
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 		// If the user is already logged in, we don't have to do anything.
-		if (isUserLogged(authentication)) {
+		if (this.authenticationVerifierStrategy.isUserLogged(authentication)) {
 			this.logger.debug("User is already logged in: {}", authentication.getCredentials());
 			chain.doFilter(request, response);
 			return;
 		}
 
 		// We need to check if we need to authenticate.
-		if (shouldTryToAuthenticate((HttpServletRequest) request)) {
+		if (this.authenticationVerifierStrategy.shouldTryToAuthenticate((HttpServletRequest) request, authentication)) {
 			this.requestCache.saveRequest((HttpServletRequest) request, (HttpServletResponse) response);
 			this.casGatewayAuthenticationEntryPoint.commence((HttpServletRequest) request, (HttpServletResponse) response, null); // No exception, since its not used.
 			return;
@@ -291,44 +305,6 @@ public class CasUnprotectedPageAuthenticationFilter implements Filter, Initializ
 		// continues with the filter chain
 		chain.doFilter(request, response);
 
-	}
-
-	protected boolean isUserLogged(Authentication authentication) {
-		return !(authentication instanceof AnonymousAuthenticationToken);
-	}
-
-	/**
-	 * Verifies if the user already try to authenticate, and if it worked or not.
-	 *
-	 * @param cookies
-	 * @return
-	 *         If there are no cookies, no authentication was tried so it returns {@link Boolean#TRUE} does not need to try to authenticate, since it never authenticate.
-	 *         If there are cookies, is the cookie we are looking for (configured with cookieName) on the list
-	 *         and the cookie value is true, means that the user is authenticated but didn't authenticate on cas server for the current service {@link Boolean#TRUE},
-	 *         if the cookie value is false, means that the user tried already to authenticate on cas but the user was not authenticaded, in this case returns {@link Boolean#TRUE}.
-	 */
-	protected boolean shouldTryToAuthenticate(HttpServletRequest request) {
-		HttpServletRequest httpRequest = request;
-		Cookie[] cookies = httpRequest.getCookies();
-
-		if (cookies == null || cookies.length == 0) {
-			return false;
-		}
-
-		Optional<Cookie> authenticationCookie = Arrays.stream(cookies)
-		    .filter(this::authenticationCookie)
-		    .findFirst();
-
-		if (authenticationCookie.isPresent()) {
-			this.logger.debug("Authentication cookie value: {}", authenticationCookie.get().getValue());
-		}
-
-		return authenticationCookie.isPresent();
-	}
-
-	protected boolean authenticationCookie(Cookie cookie) {
-		this.logger.debug("Cookie being tested: {}", cookie);
-		return this.casCookieName.equals(cookie.getName());
 	}
 
 	/**
@@ -349,6 +325,7 @@ public class CasUnprotectedPageAuthenticationFilter implements Filter, Initializ
 
 		@Override
 		protected void preCommence(HttpServletRequest request, HttpServletResponse response) {
+			super.preCommence(request, response);
 			request.getSession().setAttribute(GatewayAwareUrlAuthenticationHandler.GATEWAY_ATTEMPT, true);
 		}
 
