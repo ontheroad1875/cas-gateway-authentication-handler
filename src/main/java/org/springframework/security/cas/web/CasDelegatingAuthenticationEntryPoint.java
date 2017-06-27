@@ -197,4 +197,9 @@ public class CasDelegatingAuthenticationEntryPoint extends CasAuthenticationEntr
 		return this.casAuthenticationEntryPoint.createServiceUrl(request, response);
 	}
 
+	@Override
+	protected void preCommence(HttpServletRequest request, HttpServletResponse response) {
+		this.casAuthenticationEntryPoint.preCommence(request, response);
+	}
+
 }
