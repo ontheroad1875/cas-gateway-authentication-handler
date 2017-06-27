@@ -35,8 +35,8 @@ public class CasClientConfiguration extends WebSecurityConfigurerAdapter {
     }
 
     @Bean
-    Filter casUnprotectedResourceFilter() {
-        return new CasUnprotectedResourceAuthenticationFilter(casEntryPoint());
+    Filter casGatewayAuthenticationFilter() {
+        return new CasGatewayAuthenticationFilter(casEntryPoint());
     }
 
     //Beans needed to configure cas
@@ -83,8 +83,8 @@ CustomStrategy customStrategy() {
 }
 
 @Bean
-Filter casUnprotectedResourceFilter() {
-    return new CasUnprotectedResourceAuthenticationFilter(casEntryPoint(), customStrategy());
+Filter casGatewayAuthenticationFilter() {
+    return new CasGatewayAuthenticationFilter(casEntryPoint(), customStrategy());
 }
 ```
 
