@@ -1,18 +1,20 @@
-CAS UNPROTECTED PAGE AUTHENTICATION HANDLER
+Cas gateway authentication handler
 ===========================================
 
-This filter aims to add the gateway functionality in a spring security filter. By using the CasUnprotectedPageAuthenticationFilter, users can start authentication process in an unprotected page (anonymous page).
+This project aims to add the gateway functionality in a spring security filter. By using the CasUnprotectedPageAuthenticationFilter, users can start authentication process in an unprotected page (anonymous page).
 
-CONFIGURATION
+Configuration
 =============
 
 Add the maven dependency:
 
+NOT DEPLOYED TO MAVEN CENTRAL.
+
 ```maven
 <dependency>
-   <groupId>br.com.softplan.unj</groupId>
-   <artifactId>cas-unprotected-page-authentication-handler</artifactId>
-   <version>1.0.0-SNAPSHOT</version>
+            <groupId>br.com.softplan.unj</groupId>
+            <artifactId>cas-gateway-authentication-handler</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -27,13 +29,19 @@ public class CasClientConfiguration extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         ... Other configurations
         http
-            .addFilterAfter(casUnprotectedPageFilter(), FilterSecurityInterceptor.class)
+            .addFilterAfter(casUnprotectedResourceFilter(), FilterSecurityInterceptor.class)
 
         ...other configurations
     }
 
+    @Bean
+    Filter casUnprotectedResourceFilter() {
+        return new CasUnprotectedResourceAuthenticationFilter(casEntryPoint());
+    }
+
     //Beans needed to configure cas
 
+    
 }
 ```
 
@@ -56,10 +64,45 @@ CasAuthenticationFilter casProcessingFilter() throws Exception {
 }
 ```
 
-REQUIREMENTS
-================================
 
-- The cas authentication cookie (TGC or whatever name you changed) has to have the path set to "/"
-- When configuring the CasUnprotectedPageAuthenticationFilter you have to set the name of the cas cookie. 
-  By default it uses TGC.
+
+You can define the strategy to determine if the user is logged in and if the filter 
+should try to start authentication. An example:
+
+```java
+
+public class CustomStrategy implements AuthenticationVerifierStrategy {
+
+   ... implementation
+
+}
+
+@Bean 
+CustomStrategy customStrategy() {
+    return new CustomStrategy();
+}
+
+@Bean
+    Filter casUnprotectedResourceFilter() {
+        return new CasUnprotectedResourceAuthenticationFilter(casEntryPoint(), customStrategy());
+    }
+```
+
+
+The default strategy is the VisibleAuthenticationCookieStrategy, 
+this strategy expects that the TGC cookie from cas is visible to all applications it 
+should to authenticate (only works when in the same domain)
+
+You can change the cas cookie name instatiating the VisibleAuthenticationCookieStrategy 
+and passing in the constructor. By default the cookie name is TGC. 
+
+```java
+
+    @Bean
+    AuthenticationVerifierStrategy visibleAuthenticationCookieStrategy() {
+        return new VisibleAuthenticationCookieStrategy(CAS_AUTHENTICATION_COOKIE_NAME);
+    }
+
+```
+
 
