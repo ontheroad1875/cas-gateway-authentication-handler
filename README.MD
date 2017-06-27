@@ -1,7 +1,7 @@
 Cas gateway authentication handler
 ===========================================
 
-This project aims to add the gateway functionality in a spring security filter. By using the CasUnprotectedPageAuthenticationFilter, users can start authentication process in an unprotected page (anonymous page).
+This project aims to add the gateway functionality in a spring security filter. By using the CasGatewayAuthenticationFilter, users can start authentication process in an unprotected resource (anonymous resource).
 
 Configuration
 =============
@@ -83,9 +83,9 @@ CustomStrategy customStrategy() {
 }
 
 @Bean
-    Filter casUnprotectedResourceFilter() {
-        return new CasUnprotectedResourceAuthenticationFilter(casEntryPoint(), customStrategy());
-    }
+Filter casUnprotectedResourceFilter() {
+    return new CasUnprotectedResourceAuthenticationFilter(casEntryPoint(), customStrategy());
+}
 ```
 
 
@@ -98,10 +98,10 @@ and passing in the constructor. By default the cookie name is TGC.
 
 ```java
 
-    @Bean
-    AuthenticationVerifierStrategy visibleAuthenticationCookieStrategy() {
-        return new VisibleAuthenticationCookieStrategy(CAS_AUTHENTICATION_COOKIE_NAME);
-    }
+@Bean
+AuthenticationVerifierStrategy visibleAuthenticationCookieStrategy() {
+    return new VisibleAuthenticationCookieStrategy(CAS_AUTHENTICATION_COOKIE_NAME);
+}
 
 ```
 
