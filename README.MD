@@ -12,7 +12,7 @@ NOT DEPLOYED TO MAVEN CENTRAL.
 
 ```maven
 <dependency>
-            <groupId>br.com.softplan.unj</groupId>
+            <groupId>br.com.softplan</groupId>
             <artifactId>cas-gateway-authentication-handler</artifactId>
             <version>1.0.0-SNAPSHOT</version>
 </dependency>
